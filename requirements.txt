@@ -3,3 +3,4 @@ dj-database-url
 django-environ
 django-heroku
 whitenoise
+django-widget-tweaks
