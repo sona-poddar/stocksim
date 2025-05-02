@@ -4,3 +4,4 @@ django-environ
 django-heroku
 whitenoise
 django-widget-tweaks
+requests
