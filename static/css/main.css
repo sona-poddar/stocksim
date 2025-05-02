@@ -1,0 +1,231 @@
+/* 
+StockSim - Virtual Stock Market Simulator
+Main Stylesheet
+*/
+
+/* General Styles */
+:root {
+    --primary: #0047AB;
+    --secondary: #6c757d;
+    --success: #28a745;
+    --danger: #dc3545;
+    --warning: #ffc107;
+    --info: #17a2b8;
+    --light: #f8f9fa;
+    --dark: #343a40;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Navigation */
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.navbar .badge {
+    font-size: 0.8em;
+}
+
+/* Hero Section */
+.hero-section {
+    padding: 3rem 0;
+    background-color: var(--light);
+}
+
+/* Dashboard */
+.dashboard-container {
+    background-color: #f5f8fa;
+}
+
+.card {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: rgba(0, 71, 171, 0.05);
+    border-bottom: 1px solid rgba(0, 71, 171, 0.1);
+    font-weight: 600;
+}
+
+/* Stock Cards */
+.stats-card {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+}
+
+.feature-icon {
+    width: 70px;
+    height: 70px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(0, 71, 171, 0.1);
+    margin-bottom: 1rem;
+}
+
+/* Tables */
+.table th {
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 71, 171, 0.03);
+}
+
+/* Stock Detail */
+.chart-container {
+    min-height: 300px;
+}
+
+/* Leaderboard */
+.badge.rounded-circle {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Challenges */
+.challenge-card {
+    transition: transform 0.2s;
+}
+
+.challenge-card:hover {
+    transform: translateY(-5px);
+}
+
+.challenge-status {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+/* Form Controls */
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem rgba(0, 71, 171, 0.25);
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #003d91;
+    border-color: #003d91;
+}
+
+.btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Message container */
+.message-container {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    z-index: 1050;
+    max-width: 350px;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+    
+    .card-title {
+        font-size: 1.5rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .message-container {
+        max-width: 90%;
+        left: 5%;
+        right: 5%;
+    }
+}
+
+/* Footer */
+.footer {
+    background-color: #f8f9fa;
+    padding-top: 2rem;
+    margin-top: 3rem;
+}
+
+.footer h5 {
+    color: var(--primary);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.footer a {
+    color: #6c757d;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+/* Special Typography for Rupee Symbol */
+.rupee {
+    font-family: 'Arial Unicode MS', 'Lucida Sans Unicode', sans-serif;
+}
+
+/* Animation for loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2rem;
+    height: 2rem;
+    margin-top: -1rem;
+    margin-left: -1rem;
+    border-radius: 50%;
+    border: 0.25rem solid rgba(0, 71, 171, 0.2);
+    border-top-color: var(--primary);
+    animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

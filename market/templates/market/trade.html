@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Trade Stocks - StockSim{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="mb-0">Trade Stocks</h2>
+                        <div>
+                            <span class="me-2">Your Balance:</span>
+                            <span class="badge bg-primary fs-5">₹{{ balance|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8 mx-auto">
+                            <form action="{% url 'market:trade' %}" method="GET" class="mb-4">
+                                <div class="input-group">
+                                    <input type="text" name="q" class="form-control form-control-lg" placeholder="Search for stocks by name or symbol..." value="{{ query }}" autofocus>
+                                    <button class="btn btn-primary" type="submit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                        Search
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if messages %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    {% if query %}
+                    <h3 class="mb-0">Search Results for "{{ query }}"</h3>
+                    {% else %}
+                    <h3 class="mb-0">Nifty 50 Stocks</h3>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if stocks %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Name</th>
+                                    <th>Price</th>
+                                    <th>Change</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stock in stocks %}
+                                <tr>
+                                    <td>{{ stock.symbol }}</td>
+                                    <td>{{ stock.name }}</td>
+                                    <td>₹{{ stock.current_price|floatformat:2 }}</td>
+                                    <td class="{% if stock.change_percent >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ stock.change_percent|floatformat:2 }}%
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'market:stock_detail' stock.symbol %}" class="btn btn-sm btn-primary">Trade</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info m-3">
+                        No stocks found. Please try another search.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Trade Modal -->
+    <div class="modal fade" id="quickTradeModal" tabindex="-1" aria-labelledby="quickTradeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="quickTradeModalLabel">Trade <span id="tradeStockSymbol"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="quickTradeForm" action="{% url 'market:trade' %}" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" id="modalStockSymbol" name="symbol" value="">
+                        
+                        <div class="mb-3">
+                            <label for="modalQuantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="modalQuantity" name="quantity" min="1" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Current Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="text" class="form-control" id="modalCurrentPrice" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Total Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="text" class="form-control" id="modalTotalAmount" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            Your current balance: ₹{{ balance|floatformat:2 }}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="transaction_type" value="buy" class="btn btn-success">Buy</button>
+                            <button type="submit" name="transaction_type" value="sell" class="btn btn-danger">Sell</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Quick trade modal functionality
+    const tradeButtons = document.querySelectorAll('.quick-trade-btn');
+    
+    tradeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const symbol = this.dataset.symbol;
+            const price = parseFloat(this.dataset.price);
+            
+            document.getElementById('tradeStockSymbol').textContent = symbol;
+            document.getElementById('modalStockSymbol').value = symbol;
+            document.getElementById('modalCurrentPrice').value = price.toFixed(2);
+            
+            const quantityInput = document.getElementById('modalQuantity');
+            const totalAmountInput = document.getElementById('modalTotalAmount');
+            
+            // Calculate total when quantity changes
+            quantityInput.addEventListener('input', function() {
+                const quantity = parseInt(this.value) || 0;
+                const totalAmount = (quantity * price).toFixed(2);
+                totalAmountInput.value = totalAmount;
+            });
+            
+            // Initialize with quantity 1
+            quantityInput.value = 1;
+            totalAmountInput.value = price.toFixed(2);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('quickTradeModal'));
+            modal.show();
+        });
+    });
+});
+</script>
+{% endblock %}

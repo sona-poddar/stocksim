@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ challenge.name }} - StockSim Challenges{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'market:challenges' %}">Challenges</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ challenge.name }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">{{ challenge.name }}</h2>
+                    <span class="badge {% if challenge.status == 'active' %}bg-success{% elif challenge.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                        {{ challenge.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <p class="lead">{{ challenge.description }}</p>
+                    
+                    <div class="row my-4">
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="stats-card">
+                                <small class="text-muted d-block">Created by</small>
+                                <strong>{{ challenge.creator.username }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="stats-card">
+                                <small class="text-muted d-block">Participants</small>
+                                <strong>{{ challenge.participants_count }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="stats-card">
+                                <small class="text-muted d-block">Starting Balance</small>
+                                <strong>₹{{ challenge.initial_balance|floatformat:2 }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="stats-card">
+                                <small class="text-muted d-block">Duration</small>
+                                <strong>{{ challenge.duration_days }} days</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Challenge Timeline</h5>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <div>
+                                            <small class="text-muted d-block">Start Date</small>
+                                            <strong>{{ challenge.start_date|date:"d M, Y" }}</strong>
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted d-block">End Date</small>
+                                            <strong>{{ challenge.end_date|date:"d M, Y" }}</strong>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if challenge.status == 'active' %}
+                                    <div class="progress mt-2" style="height: 8px;">
+                                        {% with total_days=challenge.duration_days %}
+                                        {% with days_passed=challenge.start_date|timesince:now|split:" "|first|floatformat:0 %}
+                                        {% with percent=days_passed|mul:100|div:total_days %}
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ percent }}%" aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% endwith %}
+                                        {% endwith %}
+                                        {% endwith %}
+                                    </div>
+                                    {% elif challenge.status == 'pending' %}
+                                    <div class="alert alert-warning mt-2">
+                                        <small>Challenge starts in {{ challenge.start_date|timeuntil }}</small>
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-secondary mt-2">
+                                        <small>Challenge ended {{ challenge.end_date|timesince }} ago</small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Your Status</h5>
+                                    
+                                    {% if is_participant %}
+                                    <div class="alert alert-success">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle me-2">
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                        </svg>
+                                        You're participating in this challenge
+                                    </div>
+                                    
+                                    {% if user_rank %}
+                                    <div class="text-center my-3">
+                                        <h6 class="text-muted">Your Current Rank</h6>
+                                        <h2 class="display-4 fw-bold text-primary">#{{ user_rank }}</h2>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% else %}
+                                    <div class="alert alert-info">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-info me-2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                        You're not participating in this challenge yet
+                                    </div>
+                                    
+                                    {% if challenge.status != 'completed' %}
+                                    <form method="POST">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="join" value="1">
+                                        <div class="d-grid mt-3">
+                                            <button type="submit" class="btn btn-primary">Join Challenge</button>
+                                        </div>
+                                    </form>
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0">Leaderboard</h4>
+                </div>
+                <div class="card-body p-0">
+                    {% if participants %}
+                    <div class="list-group list-group-flush">
+                        {% for participant in participants %}
+                        <div class="list-group-item {% if participant.username == user.username %}bg-light{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="me-2">{{ participant.rank }}.</span>
+                                    <strong>{{ participant.username }}</strong>
+                                    {% if participant.username == user.username %}
+                                    <span class="badge bg-primary ms-1">You</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <span class="badge bg-light text-dark">₹{{ participant.portfolio_value|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                            <div class="progress mt-2" style="height: 4px;">
+                                {% with top_value=participants.0.portfolio_value %}
+                                {% with percent=participant.portfolio_value|mul:100|div:top_value %}
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ percent }}%" aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% endwith %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted">No participants yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if challenge.status == 'active' and is_participant %}
+            <div class="card shadow-sm mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Quick Actions</h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'market:trade' %}" class="btn btn-primary">Trade Stocks</a>
+                        <a href="{% url 'market:dashboard' %}" class="btn btn-outline-primary">View Portfolio</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if challenge.status == 'completed' %}
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Challenge Winners</h4>
+                </div>
+                <div class="card-body">
+                    {% if participants %}
+                    <div class="text-center mb-4">
+                        <h5>🏆 Champion 🏆</h5>
+                        <h3>{{ participants.0.username }}</h3>
+                        <p class="text-success fw-bold">₹{{ participants.0.portfolio_value|floatformat:2 }}</p>
+                    </div>
+                    
+                    {% if participants|length > 1 %}
+                    <div class="row">
+                        <div class="col-6 text-center">
+                            <h5>🥈 Runner-up</h5>
+                            <h6>{{ participants.1.username }}</h6>
+                            <p>₹{{ participants.1.portfolio_value|floatformat:2 }}</p>
+                        </div>
+                        
+                        {% if participants|length > 2 %}
+                        <div class="col-6 text-center">
+                            <h5>🥉 Third Place</h5>
+                            <h6>{{ participants.2.username }}</h6>
+                            <p>₹{{ participants.2.portfolio_value|floatformat:2 }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted">No participants in this challenge.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if is_participant and challenge.status == 'active' %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0">Challenge Strategy Tips</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex">
+                                <div class="feature-icon me-3" style="width: 50px; height: 50px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bar-chart-2">
+                                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h5>Risk Management</h5>
+                                    <p>With a limited timeframe, consider a more aggressive strategy than you might use for long-term investing.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex">
+                                <div class="feature-icon me-3" style="width: 50px; height: 50px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trending-up">
+                                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                        <polyline points="17 6 23 6 23 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h5>Market Timing</h5>
+                                    <p>Keep an eye on market news and events that might influence stock prices during the challenge period.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex">
+                                <div class="feature-icon me-3" style="width: 50px; height: 50px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pie-chart">
+                                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                                        <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h5>Diversification</h5>
+                                    <p>Spread investments across different sectors to reduce risk and capture opportunities in multiple industries.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <p class="mb-0"><strong>Challenge End Date:</strong> {{ challenge.end_date|date:"d M, Y" }} ({{ challenge.end_date|timeuntil }} remaining)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

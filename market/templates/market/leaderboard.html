@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Leaderboard - StockSim{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <h2 class="mb-3">Stock Market Champions</h2>
+                    <p class="lead">See how you rank against other investors in StockSim!</p>
+                    
+                    {% if user_rank %}
+                    <div class="alert alert-primary">
+                        <strong>Your current rank:</strong> #{{ user_rank }} with net worth of ₹{{ user.portfolio.net_worth|floatformat:2 }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h3 class="mb-0">Global Leaderboard</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Investor</th>
+                                    <th>Net Worth</th>
+                                    <th>Portfolio Value</th>
+                                    <th>Cash Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user_data in users %}
+                                <tr {% if user_data.username == user.username %}class="table-primary"{% endif %}>
+                                    <td>
+                                        {% if user_data.rank <= 3 %}
+                                        <span class="badge {% if user_data.rank == 1 %}bg-warning text-dark{% elif user_data.rank == 2 %}bg-secondary{% else %}bg-danger{% endif %} rounded-circle p-2">
+                                            {{ user_data.rank }}
+                                        </span>
+                                        {% else %}
+                                        {{ user_data.rank }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user_data.username }}</td>
+                                    <td class="text-primary fw-bold">₹{{ user_data.net_worth|floatformat:2 }}</td>
+                                    <td>₹{{ user_data.portfolio_value|floatformat:2 }}</td>
+                                    <td>₹{{ user_data.cash_balance|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">No investors found. Be the first to join the leaderboard!</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="mb-3">About the Leaderboard</h3>
+                    <p>The StockSim leaderboard ranks investors based on their total net worth, which is calculated as:</p>
+                    <div class="alert alert-info">
+                        <strong>Net Worth = Portfolio Value + Cash Balance</strong>
+                    </div>
+                    <p>Portfolio value is updated in real-time based on current stock prices, reflecting the most accurate representation of your investment performance.</p>
+                    
+                    <h5 class="mt-4">Want to climb the rankings?</h5>
+                    <ul>
+                        <li>Research stocks carefully before investing</li>
+                        <li>Diversify your portfolio to manage risk</li>
+                        <li>Monitor market trends and news</li>
+                        <li>Participate in challenges to boost your skills</li>
+                    </ul>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{% url 'market:trade' %}" class="btn btn-primary">Start Trading</a>
+                        <a href="{% url 'market:challenges' %}" class="btn btn-outline-primary ms-2">Join a Challenge</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

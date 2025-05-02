@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}{{ stock.name }} ({{ stock.symbol }}) - StockSim{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'market:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'market:trade' %}">Trade</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ stock.symbol }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h2 class="mb-0">{{ stock.name }}</h2>
+                            <p class="text-muted mb-0">{{ stock.symbol }}</p>
+                        </div>
+                        <div class="text-end">
+                            <h3 class="mb-0">₹{{ stock.current_price|floatformat:2 }}</h3>
+                            <p class="{% if stock.change_percent >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ stock.change_percent|floatformat:2 }}% 
+                                {% if stock.change_percent >= 0 %}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trending-up"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                                {% else %}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trending-down"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container mt-4" style="position: relative; height:300px;">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Trade</h4>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'market:trade' %}" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="symbol" value="{{ stock.symbol }}">
+                        
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Current Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="text" class="form-control" value="{{ stock.current_price|floatformat:2 }}" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Total Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="text" class="form-control" id="totalAmount" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Your Balance</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="text" class="form-control" value="{{ balance|floatformat:2 }}" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="transaction_type" value="buy" class="btn btn-success">Buy</button>
+                            {% if holding %}
+                            <button type="submit" name="transaction_type" value="sell" class="btn btn-danger">Sell</button>
+                            {% else %}
+                            <button type="submit" name="transaction_type" value="sell" class="btn btn-danger" disabled>Sell (No Holdings)</button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if holding %}
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0">Your Position</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="text-muted mb-1">Shares Owned</p>
+                            <h5>{{ holding.quantity }}</h5>
+                        </div>
+                        <div class="col-6">
+                            <p class="text-muted mb-1">Avg. Buy Price</p>
+                            <h5>₹{{ holding.average_buy_price|floatformat:2 }}</h5>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <p class="text-muted mb-1">Current Value</p>
+                            <h5>₹{{ holding.current_value|floatformat:2 }}</h5>
+                        </div>
+                        <div class="col-6">
+                            <p class="text-muted mb-1">Profit/Loss</p>
+                            <h5 class="{% if holding.profit_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                ₹{{ holding.profit_loss|floatformat:2 }}
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0">Stock Information</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <td width="30%"><strong>Open</strong></td>
+                            <td>₹{{ stock.open|floatformat:2 }}</td>
+                            <td width="30%"><strong>Previous Close</strong></td>
+                            <td>₹{{ stock.previous_close|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Day High</strong></td>
+                            <td>₹{{ stock.day_high|floatformat:2 }}</td>
+                            <td><strong>Day Low</strong></td>
+                            <td>₹{{ stock.day_low|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>52 Week High</strong></td>
+                            <td>₹{{ stock.fifty_two_week_high|floatformat:2 }}</td>
+                            <td><strong>52 Week Low</strong></td>
+                            <td>₹{{ stock.fifty_two_week_low|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Volume</strong></td>
+                            <td>{{ stock.volume|floatformat:0 }}</td>
+                            <td><strong>Market Cap</strong></td>
+                            <td>₹{{ stock.market_cap|floatformat:0 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>P/E Ratio</strong></td>
+                            <td>{{ stock.pe_ratio|floatformat:2 }}</td>
+                            <td><strong>Dividend Yield</strong></td>
+                            <td>{{ stock.dividend_yield|floatformat:2 }}%</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0">Market Summary</h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <div>
+                            <h5 class="mb-0">₹{{ stock.current_price|floatformat:2 }}</h5>
+                            <p class="text-muted mb-0">Current Price</p>
+                        </div>
+                        <div class="text-end">
+                            <h5 class="{% if stock.change_percent >= 0 %}text-success{% else %}text-danger{% endif %} mb-0">
+                                {{ stock.change_percent|floatformat:2 }}%
+                            </h5>
+                            <p class="text-muted mb-0">Today's Change</p>
+                        </div>
+                    </div>
+                    
+                    <div class="progress mb-3" style="height: 5px;">
+                        {% with range=stock.fifty_two_week_high|sub:stock.fifty_two_week_low %}
+                        {% with position=stock.current_price|sub:stock.fifty_two_week_low %}
+                        {% with percentage=position|div:range|mul:100 %}
+                        <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        {% endwith %}
+                        {% endwith %}
+                        {% endwith %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between small mb-3">
+                        <div>₹{{ stock.fifty_two_week_low|floatformat:2 }}</div>
+                        <div>52 Week Range</div>
+                        <div>₹{{ stock.fifty_two_week_high|floatformat:2 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate total amount when quantity changes
+    const quantityInput = document.getElementById('quantity');
+    const totalAmountInput = document.getElementById('totalAmount');
+    const currentPrice = {{ stock.current_price }};
+    
+    quantityInput.addEventListener('input', function() {
+        const quantity = parseInt(this.value) || 0;
+        const totalAmount = (quantity * currentPrice).toFixed(2);
+        totalAmountInput.value = totalAmount;
+    });
+    
+    // Generate mock price chart data
+    // In a real implementation, this would use historical data from an API
+    const dates = [];
+    const prices = [];
+    
+    // Generate dates for the last 30 days
+    const today = new Date();
+    let basePrice = {{ stock.current_price }};
+    
+    for (let i = 30; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(today.getDate() - i);
+        dates.push(date.toLocaleDateString('en-IN'));
+        
+        // Simulate some price history with random variations around current price
+        const randomFactor = 0.98 + (Math.random() * 0.04); // Random between 0.98 and 1.02
+        const trendFactor = 1 - (i * 0.001); // Slight trend based on day
+        
+        basePrice = basePrice * randomFactor * trendFactor;
+        prices.push(basePrice);
+    }
+    
+    // Create the price chart
+    const priceChartCtx = document.getElementById('priceChart').getContext('2d');
+    const priceChart = new Chart(priceChartCtx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: '₹ Price',
+                data: prices,
+                borderColor: {% if stock.change_percent >= 0 %}'rgba(40, 167, 69, 1)'{% else %}'rgba(220, 53, 69, 1)'{% endif %},
+                backgroundColor: {% if stock.change_percent >= 0 %}'rgba(40, 167, 69, 0.1)'{% else %}'rgba(220, 53, 69, 0.1)'{% endif %},
+                borderWidth: 2,
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return '₹' + context.raw.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
