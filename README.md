@@ -45,32 +45,23 @@ python manage.py migrate
 python manage.py runserver
 Visit http://127.0.0.1:8000/ in your browser to use the app.
 
-Project Structure
-bash
-Copy
-Edit
-stocksim/
+# Project Structure
+
+accounts/: Handles user authentication and profile management.
+
+market/: Core application logic for stock simulation.
+
+stocksim/: Project configuration and settings.
+
+templates/: HTML templates for rendering pages.
+
+static/: Static files like CSS and JavaScript.
+
+db.sqlite3: SQLite database file.
+
+manage.py: Django's command-line utility.
 
 
-├── accounts/               # Handles user login, registration, and profile
-│   ├── migrations/
-│   ├── templates/accounts/
-│   └── views.py
-├── market/                 # Core stock trading logic and views
-│   ├── migrations/
-│   ├── templates/market/
-│   └── views.py
-├── static/                 # Static files (CSS, JS, images)
-│   └── style.css
-├── templates/              # Shared HTML templates (base, navbar, etc.)
-│   ├── base.html
-│   └── index.html
-├── stocksim/               # Project settings and configuration
-│   ├── settings.py
-│   └── urls.py
-├── db.sqlite3              # SQLite database file
-├── manage.py               # Django management script
-└── requirements.txt        # Python package dependencies
 Contributing
 Pull requests and suggestions are welcome! If you find a bug or want to contribute a feature, feel free to fork the repo and open a PR.
 
