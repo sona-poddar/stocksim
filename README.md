@@ -50,6 +50,8 @@ bash
 Copy
 Edit
 stocksim/
+
+
 ├── accounts/               # Handles user login, registration, and profile
 │   ├── migrations/
 │   ├── templates/accounts/
