@@ -4,8 +4,6 @@ Django settings for stocksim project.
 
 import os
 from pathlib import Path
-import django_heroku
-import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +18,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-devel
 DEBUG = True
 
 ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '127.0.0.1', '.replit.dev', '.repl.co', 'b69a5b4d-2e97-4f6f-8306-ca5228de8d82-00-18nikn7x10ew2.janeway.replit.dev', '*']
-django_heroku.settings(locals())
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -85,8 +83,6 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
-             conn_max_age=600,
-             ssl_require=True
         }
     }
 
@@ -143,3 +139,7 @@ YAHOO_FINANCE_API_KEY = os.environ.get('YAHOO_FINANCE_API_KEY', None)
 
 # Initial User Balance
 INITIAL_BALANCE = 100000  # ₹1,00,000
+
+
+
+
