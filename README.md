@@ -27,6 +27,10 @@ Installation
 bash
 Copy
 Edit
+
+# Checkout the project at
+https://stocksim-nv5p.onrender.com/
+
 # Clone the repository
 git clone https://github.com/sona-poddar/stocksim.git
 cd stocksim
